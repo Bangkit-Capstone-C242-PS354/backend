@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { FirebaseRepository } from '../firebase.repository';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { Expense } from './interfaces/expense.interface';
@@ -43,5 +43,26 @@ export class ExpenseService {
           ...doc.data(),
         }) as Expense,
     );
+  }
+
+  async getExpense(userId: string, expenseId: string): Promise<Expense> {
+    const db = this.firebaseRepository.getFirestore();
+
+    const docRef = await db.collection('expenses').doc(expenseId).get();
+
+    if (!docRef.exists) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    const expense = docRef.data() as Expense;
+
+    if (expense.userId !== userId) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    return {
+      id: docRef.id,
+      ...expense,
+    };
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { FirebaseRepository } from '../firebase.repository';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { Income } from './interfaces/income.interface';
@@ -43,5 +43,27 @@ export class IncomeService {
           ...doc.data(),
         }) as Income,
     );
+  }
+
+  async getIncome(userId: string, incomeId: string): Promise<Income> {
+    const db = this.firebaseRepository.getFirestore();
+
+    const docRef = await db.collection('incomes').doc(incomeId).get();
+
+    if (!docRef.exists) {
+      throw new NotFoundException('Income not found');
+    }
+
+    const income = docRef.data() as Income;
+
+    // Verify that the income belongs to the requesting user
+    if (income.userId !== userId) {
+      throw new NotFoundException('Income not found');
+    }
+
+    return {
+      id: docRef.id,
+      ...income,
+    };
   }
 }

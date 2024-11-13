@@ -5,6 +5,7 @@ import {
   Body,
   UseGuards,
   Request,
+  Param,
 } from '@nestjs/common';
 import { IncomeService } from './income.service';
 import { CreateIncomeDto } from './dto/create-income.dto';
@@ -23,5 +24,10 @@ export class IncomeController {
   @Get()
   async getUserIncomes(@Request() req) {
     return this.incomeService.getUserIncomes(req.user.uid);
+  }
+
+  @Get(':id')
+  async getIncome(@Request() req, @Param('id') id: string) {
+    return this.incomeService.getIncome(req.user.uid, id);
   }
 }
