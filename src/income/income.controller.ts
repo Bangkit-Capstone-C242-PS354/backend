@@ -2,6 +2,8 @@ import {
   Controller,
   Post,
   Get,
+  Put,
+  Delete,
   Body,
   UseGuards,
   Request,
@@ -9,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { IncomeService } from './income.service';
 import { CreateIncomeDto } from './dto/create-income.dto';
+import { UpdateIncomeDto } from './dto/update-income.dto';
 import { AuthGuard } from '../guard/auth.guard';
 
 @Controller('incomes')
@@ -29,5 +32,19 @@ export class IncomeController {
   @Get(':id')
   async getIncome(@Request() req, @Param('id') id: string) {
     return this.incomeService.getIncome(req.user.uid, id);
+  }
+
+  @Put(':id')
+  async updateIncome(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() updateIncomeDto: UpdateIncomeDto,
+  ) {
+    return this.incomeService.updateIncome(req.user.uid, id, updateIncomeDto);
+  }
+
+  @Delete(':id')
+  async deleteIncome(@Request() req, @Param('id') id: string) {
+    return this.incomeService.deleteIncome(req.user.uid, id);
   }
 }

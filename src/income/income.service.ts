@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { FirebaseRepository } from '../firebase.repository';
 import { CreateIncomeDto } from './dto/create-income.dto';
+import { UpdateIncomeDto } from './dto/update-income.dto';
 import { Income } from './interfaces/income.interface';
+import { DeleteResponse } from './interfaces/delete-response.interface';
 
 @Injectable()
 export class IncomeService {
@@ -64,6 +66,63 @@ export class IncomeService {
     return {
       id: docRef.id,
       ...income,
+    };
+  }
+
+  async updateIncome(
+    userId: string,
+    incomeId: string,
+    updateIncomeDto: UpdateIncomeDto,
+  ): Promise<Income> {
+    const db = this.firebaseRepository.getFirestore();
+    const docRef = db.collection('incomes').doc(incomeId);
+
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      throw new NotFoundException('Income not found');
+    }
+
+    const income = doc.data() as Income;
+    if (income.userId !== userId) {
+      throw new NotFoundException('Income not found');
+    }
+
+    const updatedIncome = {
+      ...updateIncomeDto,
+      updatedAt: new Date(),
+    };
+
+    await docRef.update(updatedIncome);
+
+    return {
+      id: incomeId,
+      ...income,
+      ...updatedIncome,
+    };
+  }
+
+  async deleteIncome(
+    userId: string,
+    incomeId: string,
+  ): Promise<DeleteResponse> {
+    const db = this.firebaseRepository.getFirestore();
+    const docRef = db.collection('incomes').doc(incomeId);
+
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      throw new NotFoundException('Income not found');
+    }
+
+    const income = doc.data() as Income;
+    if (income.userId !== userId) {
+      throw new NotFoundException('Income not found');
+    }
+
+    await docRef.delete();
+
+    return {
+      message: 'Income deleted successfully',
+      id: incomeId,
     };
   }
 }

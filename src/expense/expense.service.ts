@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { FirebaseRepository } from '../firebase.repository';
 import { CreateExpenseDto } from './dto/create-expense.dto';
+import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { Expense } from './interfaces/expense.interface';
+import { DeleteResponse } from './interfaces/delete-response.interface';
 
 @Injectable()
 export class ExpenseService {
@@ -63,6 +65,63 @@ export class ExpenseService {
     return {
       id: docRef.id,
       ...expense,
+    };
+  }
+
+  async updateExpense(
+    userId: string,
+    expenseId: string,
+    updateExpenseDto: UpdateExpenseDto,
+  ): Promise<Expense> {
+    const db = this.firebaseRepository.getFirestore();
+    const docRef = db.collection('expenses').doc(expenseId);
+
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    const expense = doc.data() as Expense;
+    if (expense.userId !== userId) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    const updatedExpense = {
+      ...updateExpenseDto,
+      updatedAt: new Date(),
+    };
+
+    await docRef.update(updatedExpense);
+
+    return {
+      id: expenseId,
+      ...expense,
+      ...updatedExpense,
+    };
+  }
+
+  async deleteExpense(
+    userId: string,
+    expenseId: string,
+  ): Promise<DeleteResponse> {
+    const db = this.firebaseRepository.getFirestore();
+    const docRef = db.collection('expenses').doc(expenseId);
+
+    const doc = await docRef.get();
+    if (!doc.exists) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    const expense = doc.data() as Expense;
+    if (expense.userId !== userId) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    await docRef.delete();
+
+    return {
+      message: 'Expense deleted successfully',
+      id: expenseId,
     };
   }
 }
