@@ -9,4 +9,7 @@ export class CreateIncomeDto {
 
   @IsNumber()
   amount: number;
+
+  @IsString()
+  category: string;
 }

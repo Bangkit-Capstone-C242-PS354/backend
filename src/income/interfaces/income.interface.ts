@@ -4,6 +4,7 @@ export interface Income {
   title: string;
   date: string;
   amount: number;
+  category: string;
   createdAt: Date;
   updatedAt: Date;
 }
