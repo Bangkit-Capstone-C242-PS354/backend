@@ -4,6 +4,7 @@ import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { Expense } from './interfaces/expense.interface';
 import { DeleteResponse } from './interfaces/delete-response.interface';
+import { Timestamp } from 'firebase-admin/firestore';
 
 @Injectable()
 export class ExpenseService {
@@ -18,8 +19,8 @@ export class ExpenseService {
     const expense: Expense = {
       userId,
       ...createExpenseDto,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
     };
 
     const docRef = await db.collection('expenses').add(expense);
@@ -36,6 +37,7 @@ export class ExpenseService {
       .collection('expenses')
       .where('userId', '==', userId)
       .orderBy('date', 'desc')
+      .orderBy('createdAt', 'desc')
       .get();
 
     return snapshot.docs.map(
@@ -88,7 +90,7 @@ export class ExpenseService {
 
     const updatedExpense = {
       ...updateExpenseDto,
-      updatedAt: new Date(),
+      updatedAt: Timestamp.now(),
     };
 
     await docRef.update(updatedExpense);

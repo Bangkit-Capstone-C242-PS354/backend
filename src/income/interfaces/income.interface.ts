@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase-admin/firestore';
+
 export interface Income {
   id?: string;
   userId: string;
@@ -5,6 +7,6 @@ export interface Income {
   date: string;
   amount: number;
   category: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
