@@ -7,5 +7,6 @@ import { FirebaseModule } from '../firebase.module';
   imports: [FirebaseModule],
   controllers: [IncomeController],
   providers: [IncomeService],
+  exports: [IncomeService],
 })
 export class IncomeModule {}

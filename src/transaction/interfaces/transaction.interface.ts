@@ -1,11 +1,12 @@
 import { Timestamp } from 'firebase-admin/firestore';
 
-export interface Expense {
+export interface Transaction {
   id?: string;
   userId: string;
   title: string;
-  date: Date;
+  date: string | Date;
   amount: number;
+  type: 'EXPENSE' | 'INCOME';
   category: string;
   note?: string;
   createdAt: Timestamp;

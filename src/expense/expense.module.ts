@@ -7,5 +7,6 @@ import { FirebaseModule } from '../firebase.module';
   imports: [FirebaseModule],
   controllers: [ExpenseController],
   providers: [ExpenseService],
+  exports: [ExpenseService],
 })
 export class ExpenseModule {}

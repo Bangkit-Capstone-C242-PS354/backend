@@ -4,6 +4,7 @@ import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
 import { Income } from './interfaces/income.interface';
 import { DeleteResponse } from './interfaces/delete-response.interface';
+import { Timestamp } from 'firebase-admin/firestore';
 
 @Injectable()
 export class IncomeService {
@@ -18,8 +19,8 @@ export class IncomeService {
     const income: Income = {
       userId,
       ...createIncomeDto,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
     };
 
     const docRef = await db.collection('incomes').add(income);
@@ -36,6 +37,7 @@ export class IncomeService {
       .collection('incomes')
       .where('userId', '==', userId)
       .orderBy('date', 'desc')
+      .orderBy('createdAt', 'desc')
       .get();
 
     return snapshot.docs.map(
@@ -89,7 +91,7 @@ export class IncomeService {
 
     const updatedIncome = {
       ...updateIncomeDto,
-      updatedAt: new Date(),
+      updatedAt: Timestamp.now(),
     };
 
     await docRef.update(updatedIncome);
