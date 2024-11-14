@@ -7,7 +7,7 @@ export class UpdateExpenseDto {
 
   @IsISO8601()
   @IsOptional()
-  date?: Date;
+  date?: string;
 
   @IsNumber()
   @IsOptional()
