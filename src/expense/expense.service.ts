@@ -1,14 +1,24 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  forwardRef,
+  Inject,
+} from '@nestjs/common';
 import { FirebaseRepository } from '../firebase.repository';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { Expense } from './interfaces/expense.interface';
 import { DeleteResponse } from './interfaces/delete-response.interface';
 import { Timestamp } from 'firebase-admin/firestore';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class ExpenseService {
-  constructor(private readonly firebaseRepository: FirebaseRepository) {}
+  constructor(
+    private readonly firebaseRepository: FirebaseRepository,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
+  ) {}
 
   async createExpense(
     userId: string,
@@ -24,6 +34,15 @@ export class ExpenseService {
     };
 
     const docRef = await db.collection('expenses').add(expense);
+
+    // Update user totals
+    await this.userService.updateUserTotals(
+      userId,
+      expense.amount,
+      'EXPENSE',
+      'ADD',
+    );
+
     return {
       id: docRef.id,
       ...expense,
@@ -83,8 +102,8 @@ export class ExpenseService {
       throw new NotFoundException('Expense not found');
     }
 
-    const expense = doc.data() as Expense;
-    if (expense.userId !== userId) {
+    const oldExpense = doc.data() as Expense;
+    if (oldExpense.userId !== userId) {
       throw new NotFoundException('Expense not found');
     }
 
@@ -95,9 +114,28 @@ export class ExpenseService {
 
     await docRef.update(updatedExpense);
 
+    // Update user totals if amount changed
+    if (
+      updateExpenseDto.amount &&
+      updateExpenseDto.amount !== oldExpense.amount
+    ) {
+      await this.userService.updateUserTotals(
+        userId,
+        oldExpense.amount,
+        'EXPENSE',
+        'SUBTRACT',
+      );
+      await this.userService.updateUserTotals(
+        userId,
+        updateExpenseDto.amount,
+        'EXPENSE',
+        'ADD',
+      );
+    }
+
     return {
       id: expenseId,
-      ...expense,
+      ...oldExpense,
       ...updatedExpense,
     };
   }
@@ -120,6 +158,14 @@ export class ExpenseService {
     }
 
     await docRef.delete();
+
+    // Update user totals
+    await this.userService.updateUserTotals(
+      userId,
+      expense.amount,
+      'EXPENSE',
+      'SUBTRACT',
+    );
 
     return {
       message: 'Expense deleted successfully',

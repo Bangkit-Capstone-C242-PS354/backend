@@ -1,14 +1,24 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  forwardRef,
+  Inject,
+} from '@nestjs/common';
 import { FirebaseRepository } from '../firebase.repository';
 import { CreateIncomeDto } from './dto/create-income.dto';
 import { UpdateIncomeDto } from './dto/update-income.dto';
 import { Income } from './interfaces/income.interface';
 import { DeleteResponse } from './interfaces/delete-response.interface';
 import { Timestamp } from 'firebase-admin/firestore';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class IncomeService {
-  constructor(private readonly firebaseRepository: FirebaseRepository) {}
+  constructor(
+    private readonly firebaseRepository: FirebaseRepository,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
+  ) {}
 
   async createIncome(
     userId: string,
@@ -24,6 +34,15 @@ export class IncomeService {
     };
 
     const docRef = await db.collection('incomes').add(income);
+
+    // Update user totals
+    await this.userService.updateUserTotals(
+      userId,
+      income.amount,
+      'INCOME',
+      'ADD',
+    );
+
     return {
       id: docRef.id,
       ...income,
@@ -60,7 +79,6 @@ export class IncomeService {
 
     const income = docRef.data() as Income;
 
-    // Verify that the income belongs to the requesting user
     if (income.userId !== userId) {
       throw new NotFoundException('Income not found');
     }
@@ -84,8 +102,8 @@ export class IncomeService {
       throw new NotFoundException('Income not found');
     }
 
-    const income = doc.data() as Income;
-    if (income.userId !== userId) {
+    const oldIncome = doc.data() as Income;
+    if (oldIncome.userId !== userId) {
       throw new NotFoundException('Income not found');
     }
 
@@ -96,9 +114,25 @@ export class IncomeService {
 
     await docRef.update(updatedIncome);
 
+    // Update user totals if amount changed
+    if (updateIncomeDto.amount && updateIncomeDto.amount !== oldIncome.amount) {
+      await this.userService.updateUserTotals(
+        userId,
+        oldIncome.amount,
+        'INCOME',
+        'SUBTRACT',
+      );
+      await this.userService.updateUserTotals(
+        userId,
+        updateIncomeDto.amount,
+        'INCOME',
+        'ADD',
+      );
+    }
+
     return {
       id: incomeId,
-      ...income,
+      ...oldIncome,
       ...updatedIncome,
     };
   }
@@ -119,6 +153,14 @@ export class IncomeService {
     if (income.userId !== userId) {
       throw new NotFoundException('Income not found');
     }
+
+    // Update user totals before deleting
+    await this.userService.updateUserTotals(
+      userId,
+      income.amount,
+      'INCOME',
+      'SUBTRACT',
+    );
 
     await docRef.delete();
 
