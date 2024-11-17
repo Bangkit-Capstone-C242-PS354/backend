@@ -1,19 +1,18 @@
 import { Module } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { FirebaseRepository } from './firebase.repository';
-import * as serviceAccount from '../serviceAccountKey.json';
 
 const firebaseProvider = {
   provide: 'FIREBASE_APP',
   useFactory: () => {
     return admin.initializeApp({
       credential: admin.credential.cert({
-        projectId: serviceAccount.project_id,
-        clientEmail: serviceAccount.client_email,
-        privateKey: serviceAccount.private_key,
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/gm, '\n'),
       } as admin.ServiceAccount),
-      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
-      storageBucket: `${serviceAccount.project_id}.appspot.com`,
+      databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`,
+      storageBucket: `${process.env.FIREBASE_PROJECT_ID}.appspot.com`,
     });
   },
 };
