@@ -126,4 +126,29 @@ export class ExpenseService {
       id: expenseId,
     };
   }
+
+  async getFilteredExpenses(
+    userId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<Expense[]> {
+    const db = this.firebaseRepository.getFirestore();
+    
+    const snapshot = await db
+      .collection('expenses')
+      .where('userId', '==', userId)
+      .where('date', '>=', startDate)
+      .where('date', '<=', endDate)
+      .orderBy('date', 'desc')
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    return snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        }) as Expense,
+    );
+  }
 }

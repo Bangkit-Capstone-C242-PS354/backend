@@ -45,4 +45,20 @@ export class TransactionService {
       return createTimeB - createTimeA;
     });
   }
+
+  async getFilteredTransactions(
+    userId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<Transaction[]> {
+    const allTransactions = await this.getUserTransactions(userId);
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    return allTransactions.filter((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= start && transactionDate <= end;
+    });
+  }
 }
