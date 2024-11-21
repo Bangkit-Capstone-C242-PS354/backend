@@ -8,11 +8,15 @@ import {
   UseGuards,
   Request,
   Param,
+  Query,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ExpenseService } from './expense.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { AuthGuard } from '../guard/auth.guard';
+import { FilterExpenseDto } from './dto/filter-expense.dto';
+import { Period } from 'src/analytics/interfaces/period.enum';
 
 @Controller('expenses')
 @UseGuards(AuthGuard)
@@ -28,7 +32,17 @@ export class ExpenseController {
   }
 
   @Get()
-  async getUserExpenses(@Request() req) {
+  async getUserExpenses(
+    @Request() req,
+    @Query(ValidationPipe) filterDto: FilterExpenseDto,
+  ) {
+    if (filterDto.period === Period.CUSTOM && filterDto.startDate && filterDto.endDate) {
+      return this.expenseService.getFilteredExpenses(
+        req.user.uid,
+        filterDto.startDate,
+        filterDto.endDate,
+      );
+    }
     return this.expenseService.getUserExpenses(req.user.uid);
   }
 
