@@ -59,7 +59,6 @@ export class ExpenseController {
     return this.expenseService.getUserExpenses(req.user.uid);
   }
 }
-
 @Controller('incomes')
 @UseGuards(AuthGuard)
 export class IncomeController {
