@@ -169,4 +169,29 @@ export class IncomeService {
       id: incomeId,
     };
   }
+
+  async getFilteredIncomes(
+    userId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<Income[]> {
+    const db = this.firebaseRepository.getFirestore();
+    
+    const snapshot = await db
+      .collection('incomes')
+      .where('userId', '==', userId)
+      .where('date', '>=', startDate)
+      .where('date', '<=', endDate)
+      .orderBy('date', 'desc')
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    return snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+        }) as Income,
+    );
+  }
 }
