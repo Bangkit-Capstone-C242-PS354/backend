@@ -10,7 +10,13 @@ import {
   Param,
   Query,
   ValidationPipe,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ExpenseService } from './expense.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
@@ -24,11 +30,26 @@ export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
+  @UseInterceptors(FileInterceptor('receipt'))
   async createExpense(
     @Request() req,
     @Body() createExpenseDto: CreateExpenseDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+          new FileTypeValidator({ fileType: /(jpg|jpeg|png|pdf)$/ }),
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    receipt?: Express.Multer.File,
   ) {
-    return this.expenseService.createExpense(req.user.uid, createExpenseDto);
+    return this.expenseService.createExpense(
+      req.user.uid,
+      createExpenseDto,
+      receipt,
+    );
   }
 
   @Get()
@@ -36,7 +57,11 @@ export class ExpenseController {
     @Request() req,
     @Query(ValidationPipe) filterDto: FilterExpenseDto,
   ) {
-    if (filterDto.period === Period.CUSTOM && filterDto.startDate && filterDto.endDate) {
+    if (
+      filterDto.period === Period.CUSTOM &&
+      filterDto.startDate &&
+      filterDto.endDate
+    ) {
       return this.expenseService.getFilteredExpenses(
         req.user.uid,
         filterDto.startDate,

@@ -1,4 +1,5 @@
 import { IsString, IsNumber, IsOptional, IsISO8601 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateExpenseDto {
   @IsString()
@@ -8,6 +9,7 @@ export class CreateExpenseDto {
   date: string;
 
   @IsNumber()
+  @Type(() => Number)
   amount: number;
 
   @IsString()
