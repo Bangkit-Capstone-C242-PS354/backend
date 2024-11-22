@@ -108,6 +108,7 @@ export class ExpenseService {
     userId: string,
     expenseId: string,
     updateExpenseDto: UpdateExpenseDto,
+    receiptFile?: Express.Multer.File,
   ): Promise<Expense> {
     const db = this.firebaseRepository.getFirestore();
     const docRef = db.collection('expenses').doc(expenseId);
@@ -122,10 +123,48 @@ export class ExpenseService {
       throw new NotFoundException('Expense not found');
     }
 
+    let receiptUrl = oldExpense.receiptUrl;
+
+    // Handle receipt file changes
+    if (receiptFile || updateExpenseDto.receiptUrl === null) {
+      // Delete old receipt if it exists
+      if (oldExpense.receiptUrl) {
+        try {
+          // Extract file path from Google Storage URL
+          // URL format: https://storage.googleapis.com/BUCKET_NAME/path/to/file
+          const storageUrl = new URL(oldExpense.receiptUrl);
+          // Remove the leading slash and everything before the bucket name
+          const fullPath = storageUrl.pathname.split('/').slice(2).join('/');
+          const filePath = decodeURIComponent(fullPath);
+
+          await this.firebaseRepository.deleteFile(filePath);
+          receiptUrl = null; // Clear the URL after successful deletion
+        } catch (error) {
+          console.error('Error deleting old receipt:', error);
+          throw error;
+        }
+      }
+
+      // Only upload new file if old file was successfully deleted or didn't exist
+      if (receiptFile) {
+        const filePath = `receipts/${userId}/${Date.now()}-${receiptFile.originalname}`;
+        receiptUrl = await this.firebaseRepository.uploadFile(
+          receiptFile,
+          filePath,
+        );
+      }
+    }
+
     const updatedExpense = {
       ...updateExpenseDto,
+      receiptUrl,
       updatedAt: Timestamp.now(),
     };
+
+    // Remove undefined values from the update object
+    Object.keys(updatedExpense).forEach(
+      (key) => updatedExpense[key] === undefined && delete updatedExpense[key],
+    );
 
     await docRef.update(updatedExpense);
 
@@ -170,6 +209,19 @@ export class ExpenseService {
     const expense = doc.data() as Expense;
     if (expense.userId !== userId) {
       throw new NotFoundException('Expense not found');
+    }
+
+    // Delete receipt file if it exists
+    if (expense.receiptUrl) {
+      try {
+        const storageUrl = new URL(expense.receiptUrl);
+        const fullPath = storageUrl.pathname.split('/').slice(2).join('/');
+        const filePath = decodeURIComponent(fullPath);
+        await this.firebaseRepository.deleteFile(filePath);
+      } catch (error) {
+        console.error('Error deleting receipt:', error);
+        throw error;
+      }
     }
 
     await docRef.delete();

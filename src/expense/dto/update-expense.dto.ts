@@ -20,4 +20,8 @@ export class UpdateExpenseDto {
   @IsString()
   @IsOptional()
   note?: string;
+
+  @IsString()
+  @IsOptional()
+  receiptUrl?: string;
 }

@@ -50,4 +50,22 @@ export class FirebaseRepository {
       blobStream.end(file.buffer);
     });
   }
+
+  public async deleteFile(path: string): Promise<void> {
+    try {
+      const bucket = this.storage.bucket();
+      const file = bucket.file(path);
+      const [exists] = await file.exists();
+
+      if (!exists) {
+        console.warn(`File ${path} does not exist in storage`);
+        return;
+      }
+
+      await file.delete();
+    } catch (error) {
+      console.error(`Error deleting file ${path}:`, error);
+      throw error;
+    }
+  }
 }
