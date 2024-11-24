@@ -30,26 +30,11 @@ export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('receipt'))
   async createExpense(
     @Request() req,
     @Body() createExpenseDto: CreateExpenseDto,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
-          new FileTypeValidator({ fileType: /(jpg|jpeg|png|pdf)$/ }),
-        ],
-        fileIsRequired: false,
-      }),
-    )
-    receipt?: Express.Multer.File,
   ) {
-    return this.expenseService.createExpense(
-      req.user.uid,
-      createExpenseDto,
-      receipt,
-    );
+    return this.expenseService.createExpense(req.user.uid, createExpenseDto);
   }
 
   @Get()

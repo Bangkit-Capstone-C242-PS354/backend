@@ -23,27 +23,12 @@ export class ExpenseService {
   async createExpense(
     userId: string,
     createExpenseDto: CreateExpenseDto,
-    receiptFile?: Express.Multer.File,
   ): Promise<Expense> {
     const db = this.firebaseRepository.getFirestore();
-
-    let receiptUrl: string | undefined;
-
-    if (receiptFile) {
-      // Generate a unique file path
-      const filePath = `receipts/${userId}/${Date.now()}-${receiptFile.originalname}`;
-
-      // Upload the file and get the public URL
-      receiptUrl = await this.firebaseRepository.uploadFile(
-        receiptFile,
-        filePath,
-      );
-    }
 
     const expense: Expense = {
       userId,
       ...createExpenseDto,
-      receiptUrl,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     };

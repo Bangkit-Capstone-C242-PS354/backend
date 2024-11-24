@@ -1,4 +1,10 @@
-import { IsString, IsNumber, IsOptional, IsISO8601 } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsISO8601,
+  IsUrl,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateExpenseDto {
@@ -18,4 +24,8 @@ export class CreateExpenseDto {
   @IsString()
   @IsOptional()
   note?: string;
+
+  @IsUrl()
+  @IsOptional()
+  receiptUrl?: string;
 }
