@@ -1,4 +1,14 @@
-import { Controller, Get, UseGuards, Request, Query, ValidationPipe, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  UseInterceptors,
+  Request,
+  Query,
+  ValidationPipe,
+  Post,
+  Body,
+} from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { AuthGuard } from '../guard/auth.guard';
 import { FilterTransactionDto } from './dto/filter-transaction.dto';
@@ -9,9 +19,11 @@ import { FilterExpenseDto } from '../expense/dto/filter-expense.dto';
 import { IncomeService } from '../income/income.service';
 import { CreateIncomeDto } from '../income/dto/create-income.dto';
 import { FilterIncomeDto } from '../income/dto/filter-income.dto';
+import { TransformInterceptor } from '../interceptors/transform.interceptor';
 
 @Controller('transactions')
 @UseGuards(AuthGuard)
+@UseInterceptors(TransformInterceptor)
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
@@ -20,14 +32,24 @@ export class TransactionController {
     @Request() req,
     @Query(ValidationPipe) filterDto: FilterTransactionDto,
   ) {
-    if (filterDto.period === Period.CUSTOM && filterDto.startDate && filterDto.endDate) {
-      return this.transactionService.getFilteredTransactions(
-        req.user.uid,
-        filterDto.startDate,
-        filterDto.endDate,
-      );
+    if (
+      filterDto.period === Period.CUSTOM &&
+      filterDto.startDate &&
+      filterDto.endDate
+    ) {
+      return {
+        message: 'Filtered transactions retrieved successfully',
+        data: await this.transactionService.getFilteredTransactions(
+          req.user.uid,
+          filterDto.startDate,
+          filterDto.endDate,
+        ),
+      };
     }
-    return this.transactionService.getUserTransactions(req.user.uid);
+    return {
+      message: 'Transactions retrieved successfully',
+      data: await this.transactionService.getUserTransactions(req.user.uid),
+    };
   }
 }
 
@@ -49,7 +71,11 @@ export class ExpenseController {
     @Request() req,
     @Query(ValidationPipe) filterDto: FilterExpenseDto,
   ) {
-    if (filterDto.period === Period.CUSTOM && filterDto.startDate && filterDto.endDate) {
+    if (
+      filterDto.period === Period.CUSTOM &&
+      filterDto.startDate &&
+      filterDto.endDate
+    ) {
       return this.expenseService.getFilteredExpenses(
         req.user.uid,
         filterDto.startDate,
@@ -74,7 +100,11 @@ export class IncomeController {
     @Request() req,
     @Query(ValidationPipe) filterDto: FilterIncomeDto,
   ) {
-    if (filterDto.period === Period.CUSTOM && filterDto.startDate && filterDto.endDate) {
+    if (
+      filterDto.period === Period.CUSTOM &&
+      filterDto.startDate &&
+      filterDto.endDate
+    ) {
       return this.incomeService.getFilteredIncomes(
         req.user.uid,
         filterDto.startDate,

@@ -115,10 +115,7 @@ export class ExpenseService {
       // Delete old receipt if it exists
       if (oldExpense.receiptUrl) {
         try {
-          // Extract file path from Google Storage URL
-          // URL format: https://storage.googleapis.com/BUCKET_NAME/path/to/file
           const storageUrl = new URL(oldExpense.receiptUrl);
-          // Remove the leading slash and everything before the bucket name
           const fullPath = storageUrl.pathname.split('/').slice(2).join('/');
           const filePath = decodeURIComponent(fullPath);
 
@@ -138,6 +135,11 @@ export class ExpenseService {
           filePath,
         );
       }
+    }
+
+    // Convert amount from string to number if it exists
+    if (updateExpenseDto.amount) {
+      updateExpenseDto.amount = Number(updateExpenseDto.amount);
     }
 
     const updatedExpense = {

@@ -15,6 +15,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  HttpCode,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExpenseService } from './expense.service';
@@ -23,18 +24,28 @@ import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { AuthGuard } from '../guard/auth.guard';
 import { FilterExpenseDto } from './dto/filter-expense.dto';
 import { Period } from 'src/analytics/interfaces/period.enum';
+import { TransformInterceptor } from '../interceptors/transform.interceptor';
 
 @Controller('expenses')
 @UseGuards(AuthGuard)
+@UseInterceptors(TransformInterceptor)
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 
   @Post()
+  @HttpCode(201)
   async createExpense(
     @Request() req,
     @Body() createExpenseDto: CreateExpenseDto,
   ) {
-    return this.expenseService.createExpense(req.user.uid, createExpenseDto);
+    const expense = await this.expenseService.createExpense(
+      req.user.uid,
+      createExpenseDto,
+    );
+    return {
+      message: 'Expense created successfully',
+      data: expense,
+    };
   }
 
   @Get()
@@ -47,18 +58,30 @@ export class ExpenseController {
       filterDto.startDate &&
       filterDto.endDate
     ) {
-      return this.expenseService.getFilteredExpenses(
+      const expenses = await this.expenseService.getFilteredExpenses(
         req.user.uid,
         filterDto.startDate,
         filterDto.endDate,
       );
+      return {
+        message: 'Filtered expenses retrieved successfully',
+        data: expenses,
+      };
     }
-    return this.expenseService.getUserExpenses(req.user.uid);
+    const expenses = await this.expenseService.getUserExpenses(req.user.uid);
+    return {
+      message: 'Expenses retrieved successfully',
+      data: expenses,
+    };
   }
 
   @Get(':id')
   async getExpense(@Request() req, @Param('id') id: string) {
-    return this.expenseService.getExpense(req.user.uid, id);
+    const expense = await this.expenseService.getExpense(req.user.uid, id);
+    return {
+      message: 'Expense retrieved successfully',
+      data: expense,
+    };
   }
 
   @Put(':id')
@@ -78,16 +101,24 @@ export class ExpenseController {
     )
     receipt?: Express.Multer.File,
   ) {
-    return this.expenseService.updateExpense(
+    const expense = await this.expenseService.updateExpense(
       req.user.uid,
       id,
       updateExpenseDto,
       receipt,
     );
+    return {
+      message: 'Expense updated successfully',
+      data: expense,
+    };
   }
 
   @Delete(':id')
   async deleteExpense(@Request() req, @Param('id') id: string) {
-    return this.expenseService.deleteExpense(req.user.uid, id);
+    const result = await this.expenseService.deleteExpense(req.user.uid, id);
+    return {
+      message: result.message,
+      data: { id: result.id },
+    };
   }
 }

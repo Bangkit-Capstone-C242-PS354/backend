@@ -12,9 +12,11 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ReceiptService } from './receipt.service';
 import { AuthGuard } from '../guard/auth.guard';
+import { TransformInterceptor } from '../interceptors/transform.interceptor';
 
 @Controller('receipts')
 @UseGuards(AuthGuard)
+@UseInterceptors(TransformInterceptor)
 export class ReceiptController {
   constructor(private readonly receiptService: ReceiptService) {}
 
@@ -31,8 +33,8 @@ export class ReceiptController {
       }),
     )
     file: Express.Multer.File,
-  ): Promise<{ url: string }> {
+  ): Promise<{ message: string; data: { url: string } }> {
     const url = await this.receiptService.uploadReceipt(req.user.uid, file);
-    return { url };
+    return { message: 'Receipt uploaded successfully', data: { url } };
   }
 }
