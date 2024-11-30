@@ -44,7 +44,7 @@ export class ChatbotService {
     const response = await result.response;
 
     return {
-      reply: response.text(),
+      reply: response,
     };
   }
 }
