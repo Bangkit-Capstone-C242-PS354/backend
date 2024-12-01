@@ -8,6 +8,7 @@ import { TransactionModule } from './transaction/transaction.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { UserModule } from './user/user.module';
 import { ReceiptModule } from './receipt/receipt.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ReceiptModule } from './receipt/receipt.module';
     AnalyticsModule,
     UserModule,
     ReceiptModule,
+    ChatbotModule,
   ],
 })
 export class AppModule {}
