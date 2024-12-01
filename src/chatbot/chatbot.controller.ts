@@ -4,6 +4,7 @@ import {
   Body,
   UseGuards,
   UseInterceptors,
+  Request,
 } from '@nestjs/common';
 import { ChatbotService } from './chatbot.service';
 import { AuthGuard } from '../guard/auth.guard';
@@ -17,8 +18,11 @@ export class ChatbotController {
   constructor(private readonly chatbotService: ChatbotService) {}
 
   @Post('chat')
-  async chat(@Body() chatMessageDto: ChatMessageDto) {
-    const response = await this.chatbotService.chat(chatMessageDto.message);
+  async chat(@Request() req, @Body() chatMessageDto: ChatMessageDto) {
+    const response = await this.chatbotService.chat(
+      req.user.uid,
+      chatMessageDto.message,
+    );
     return {
       message: 'Chat response generated successfully',
       data: response,

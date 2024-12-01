@@ -4,13 +4,15 @@ import {
   HarmCategory,
   HarmBlockThreshold,
 } from '@google-cloud/vertexai';
+import { TransactionService } from '../transaction/transaction.service';
+import { Transaction } from '../transaction/interfaces/transaction.interface';
 
 @Injectable()
 export class ChatbotService {
   private readonly vertexAI: VertexAI;
   private readonly generativeModel;
 
-  constructor() {
+  constructor(private readonly transactionService: TransactionService) {
     this.vertexAI = new VertexAI({
       project: process.env.VERTEX_AI_PROJECT,
       location: process.env.VERTEX_AI_LOCATION,
@@ -31,20 +33,43 @@ export class ChatbotService {
         role: 'system',
         parts: [
           {
-            text: 'You are a helpful assistant that provides clear and concise responses.',
+            text: `You are a helpful financial assistant. When analyzing transactions:
+            1. Look for spending patterns
+            2. Identify potential areas for savings
+            3. Provide actionable financial advice
+            4. Be specific but concise in your recommendations
+            5. If you notice unusual spending patterns, mention them
+            6. Always maintain a professional and supportive tone`,
           },
         ],
       },
     });
   }
 
-  async chat(message: string) {
-    const chat = this.generativeModel.startChat();
+  async chat(userId: string, message: string) {
+    const transactions =
+      await this.transactionService.getUserTransactions(userId);
+    const transactionContext = this.formatTransactionsForContext(transactions);
+
+    const chat = this.generativeModel.startChat({
+      context: `Here are the user's recent transactions:\n${transactionContext}`,
+    });
+
     const result = await chat.sendMessage(message);
     const response = await result.response;
 
     return {
       reply: response,
     };
+  }
+
+  private formatTransactionsForContext(transactions: Transaction[]): string {
+    return transactions
+      .slice(0, 10) // Only use last 10 transactions for context
+      .map(
+        (t) =>
+          `${t.date}: ${t.type} - ${t.title} (${t.category}) - $${t.amount}`,
+      )
+      .join('\n');
   }
 }
