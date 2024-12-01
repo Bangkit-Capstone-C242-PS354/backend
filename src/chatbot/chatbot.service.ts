@@ -9,16 +9,21 @@ import { Transaction } from '../transaction/interfaces/transaction.interface';
 
 @Injectable()
 export class ChatbotService {
-  private readonly vertexAI: VertexAI;
-  private readonly generativeModel;
+  private vertexAI: VertexAI;
 
   constructor(private readonly transactionService: TransactionService) {
     this.vertexAI = new VertexAI({
       project: process.env.VERTEX_AI_PROJECT,
       location: process.env.VERTEX_AI_LOCATION,
     });
+  }
 
-    this.generativeModel = this.vertexAI.getGenerativeModel({
+  async chat(userId: string, message: string) {
+    const transactions =
+      await this.transactionService.getUserTransactions(userId);
+    const transactionContext = this.formatTransactionsForContext(transactions);
+
+    const generativeModel = this.vertexAI.getGenerativeModel({
       model: 'gemini-1.5-flash',
       safetySettings: [
         {
@@ -39,27 +44,21 @@ export class ChatbotService {
             3. Provide actionable financial advice
             4. Be specific but concise in your recommendations
             5. If you notice unusual spending patterns, mention them
-            6. Always maintain a professional and supportive tone`,
+            6. Always maintain a professional and supportive tone
+
+            Here are the user's recent transactions:
+            ${transactionContext}`,
           },
         ],
       },
     });
-  }
 
-  async chat(userId: string, message: string) {
-    const transactions =
-      await this.transactionService.getUserTransactions(userId);
-    const transactionContext = this.formatTransactionsForContext(transactions);
-
-    const chat = this.generativeModel.startChat({
-      context: `Here are the user's recent transactions:\n${transactionContext}`,
-    });
-
+    const chat = generativeModel.startChat();
     const result = await chat.sendMessage(message);
     const response = await result.response;
 
     return {
-      reply: response,
+      reply: response.candidates[0].content.parts[0].text,
     };
   }
 
