@@ -4,6 +4,7 @@ export interface User {
   uid: string;
   email: string;
   username: string;
+  password: string;
   totalExpense: number;
   totalIncome: number;
   totalBalance: number;
