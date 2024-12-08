@@ -1,10 +1,19 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Request,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { AuthGuard } from '../guard/auth.guard';
 import { Period } from './interfaces/period.enum';
+import { TransformInterceptor } from '../interceptors/transform.interceptor';
 
 @Controller('analytics')
 @UseGuards(AuthGuard)
+@UseInterceptors(TransformInterceptor)
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
@@ -18,15 +27,18 @@ export class AnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.analyticsService.getExpenseAnalytics(
-      req.user.uid,
-      period,
-      year,
-      month,
-      week,
-      startDate,
-      endDate,
-    );
+    return {
+      message: 'Expense analytics retrieved successfully',
+      data: await this.analyticsService.getExpenseAnalytics(
+        req.user.uid,
+        period,
+        year,
+        month,
+        week,
+        startDate,
+        endDate,
+      ),
+    };
   }
 
   @Get('incomes')
@@ -39,14 +51,17 @@ export class AnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    return this.analyticsService.getIncomeAnalytics(
-      req.user.uid,
-      period,
-      year,
-      month,
-      week,
-      startDate,
-      endDate,
-    );
+    return {
+      message: 'Income analytics retrieved successfully',
+      data: await this.analyticsService.getIncomeAnalytics(
+        req.user.uid,
+        period,
+        year,
+        month,
+        week,
+        startDate,
+        endDate,
+      ),
+    };
   }
 }

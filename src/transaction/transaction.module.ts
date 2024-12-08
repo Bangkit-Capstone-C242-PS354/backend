@@ -9,5 +9,6 @@ import { FirebaseModule } from 'src/firebase.module';
   imports: [FirebaseModule, ExpenseModule, IncomeModule],
   controllers: [TransactionController],
   providers: [TransactionService],
+  exports: [TransactionService],
 })
 export class TransactionModule {}

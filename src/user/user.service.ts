@@ -41,6 +41,12 @@ export class UserService {
     const db = this.firebaseRepository.getFirestore();
     const userRef = db.collection('users').doc(userId);
 
+    // Check if user exists
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) {
+      throw new NotFoundException('User not found. Please sign up first.');
+    }
+
     const multiplier = operation === 'ADD' ? 1 : -1;
     const updateAmount = amount * multiplier;
 

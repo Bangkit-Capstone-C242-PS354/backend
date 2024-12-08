@@ -8,6 +8,7 @@ export interface Expense {
   amount: number;
   category: string;
   note?: string;
+  receiptUrl?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

@@ -1,9 +1,14 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { FirebaseRepository } from '../firebase.repository';
 import { SignUpDto } from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import { User } from '../user/interfaces/user.interface';
 import { Timestamp } from 'firebase-admin/firestore';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +28,9 @@ export class AuthService {
     }
 
     try {
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(signUpDto.password, 10);
+
       // Create authentication user
       const userRecord = await this.firebaseRepository.auth.createUser({
         email: signUpDto.email,
@@ -34,6 +42,7 @@ export class AuthService {
         uid: userRecord.uid,
         email: signUpDto.email,
         username: signUpDto.username,
+        password: hashedPassword,
         totalExpense: 0,
         totalIncome: 0,
         totalBalance: 0,
@@ -54,13 +63,34 @@ export class AuthService {
   }
 
   async signIn(signInDto: SignInDto) {
-    try {
-      const user = await this.firebaseRepository.auth.getUserByEmail(
-        signInDto.email,
-      );
+    const db = this.firebaseRepository.getFirestore();
 
+    try {
+      // Retrieve user document by email
+      const userSnapshot = await db
+        .collection('users')
+        .where('email', '==', signInDto.email)
+        .get();
+
+      if (userSnapshot.empty) {
+        throw new UnauthorizedException('Invalid email or password');
+      }
+
+      const userDoc = userSnapshot.docs[0];
+      const userData = userDoc.data() as User;
+
+      // Verify the password
+      const isPasswordValid = await bcrypt.compare(
+        signInDto.password,
+        userData.password,
+      );
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid email or password');
+      }
+
+      // Create a custom token
       const customToken = await this.firebaseRepository.auth.createCustomToken(
-        user.uid,
+        userData.uid,
       );
 
       return {
@@ -68,7 +98,10 @@ export class AuthService {
         customToken,
       };
     } catch (error) {
-      throw error;
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid email or password');
     }
   }
 }
