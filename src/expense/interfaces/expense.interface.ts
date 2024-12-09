@@ -9,6 +9,8 @@ export interface Expense {
   category: string;
   note?: string;
   receiptUrl?: string;
+  tax?: number;
+  paymentMethod?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
