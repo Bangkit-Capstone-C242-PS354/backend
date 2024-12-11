@@ -8,6 +8,7 @@ import {
   ValidationPipe,
   Post,
   Body,
+  Res,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { AuthGuard } from '../guard/auth.guard';
@@ -20,6 +21,7 @@ import { IncomeService } from '../income/income.service';
 import { CreateIncomeDto } from '../income/dto/create-income.dto';
 import { FilterIncomeDto } from '../income/dto/filter-income.dto';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
+import { Response } from 'express';
 
 @Controller('transactions')
 @UseGuards(AuthGuard)
@@ -49,6 +51,29 @@ export class TransactionController {
     return {
       message: 'Transactions retrieved successfully',
       data: await this.transactionService.getUserTransactions(req.user.uid),
+    };
+  }
+
+  @Get('export')
+  async exportTransactions(
+    @Request() req,
+    @Query(ValidationPipe) filterDto: FilterTransactionDto,
+  ) {
+    const excelBuffer = await this.transactionService.exportTransactions(
+      req.user.uid,
+      filterDto.startDate,
+      filterDto.endDate,
+    );
+
+    const base64String = excelBuffer.toString('base64');
+
+    return {
+      message: 'Transactions exported successfully',
+      data: {
+        // content: base64String,
+        filename: 'transactions.xlsx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      }
     };
   }
 }

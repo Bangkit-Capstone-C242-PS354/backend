@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ExpenseService } from '../expense/expense.service';
 import { IncomeService } from '../income/income.service';
 import { Transaction } from './interfaces/transaction.interface';
+import * as XLSX from 'xlsx';
 
 @Injectable()
 export class TransactionService {
@@ -60,5 +61,49 @@ export class TransactionService {
       const transactionDate = new Date(transaction.date);
       return transactionDate >= start && transactionDate <= end;
     });
+  }
+
+  async exportTransactions(
+    userId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<Buffer> {
+    // Get transactions
+    let transactions = await this.getUserTransactions(userId);
+
+    // Apply date filtering if dates are provided
+    if (startDate && endDate) {
+      transactions = transactions.filter((transaction) => {
+        const transactionDate = new Date(transaction.date);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        return transactionDate >= start && transactionDate <= end;
+      });
+    }
+
+    // Prepare data for Excel
+    const workbook = XLSX.utils.book_new();
+    
+    // Convert transactions to worksheet data
+    const worksheetData = transactions.map((transaction) => ({
+      Date: transaction.date,
+      Type: transaction.type,
+      Title: transaction.title,
+      Category: transaction.category,
+      Amount: transaction.amount,
+      Note: transaction.note || '',
+      'Created At': transaction.createdAt.toDate().toISOString(),
+    }));
+
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
+
+    // Generate buffer
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    return excelBuffer;
   }
 }
