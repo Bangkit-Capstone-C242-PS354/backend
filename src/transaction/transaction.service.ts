@@ -53,10 +53,10 @@ export class TransactionService {
     endDate: string,
   ): Promise<Transaction[]> {
     const allTransactions = await this.getUserTransactions(userId);
-    
+
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     return allTransactions.filter((transaction) => {
       const transactionDate = new Date(transaction.date);
       return transactionDate >= start && transactionDate <= end;
@@ -83,7 +83,7 @@ export class TransactionService {
 
     // Prepare data for Excel
     const workbook = XLSX.utils.book_new();
-    
+
     // Convert transactions to worksheet data
     const worksheetData = transactions.map((transaction) => ({
       Date: transaction.date,
@@ -92,6 +92,11 @@ export class TransactionService {
       Category: transaction.category,
       Amount: transaction.amount,
       Note: transaction.note || '',
+      'Receipt URL':
+        transaction.type === 'EXPENSE' ? transaction.receiptUrl || '' : '',
+      Tax: transaction.type === 'EXPENSE' ? transaction.tax : '',
+      'Payment Method':
+        transaction.type === 'EXPENSE' ? transaction.paymentMethod || '' : '',
       'Created At': transaction.createdAt.toDate().toISOString(),
     }));
 
@@ -102,7 +107,10 @@ export class TransactionService {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
 
     // Generate buffer
-    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const excelBuffer = XLSX.write(workbook, {
+      type: 'buffer',
+      bookType: 'xlsx',
+    });
 
     return excelBuffer;
   }

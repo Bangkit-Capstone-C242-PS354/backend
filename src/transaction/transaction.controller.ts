@@ -58,6 +58,7 @@ export class TransactionController {
   async exportTransactions(
     @Request() req,
     @Query(ValidationPipe) filterDto: FilterTransactionDto,
+    @Res() res: Response,
   ) {
     const excelBuffer = await this.transactionService.exportTransactions(
       req.user.uid,
@@ -65,16 +66,16 @@ export class TransactionController {
       filterDto.endDate,
     );
 
-    const base64String = excelBuffer.toString('base64');
+    // Force file download by setting binary type and attachment disposition
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': 'attachment; filename="transactions.xlsx"',
+      'Content-Length': excelBuffer.length,
+    });
 
-    return {
-      message: 'Transactions exported successfully',
-      data: {
-        // content: base64String,
-        filename: 'transactions.xlsx',
-        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      }
-    };
+    // Write the buffer and end the response
+    res.write(excelBuffer, 'binary');
+    res.end();
   }
 }
 
