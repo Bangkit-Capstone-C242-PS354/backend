@@ -30,3 +30,6 @@
 - View user info
 - Update users username
 - Chatbot to give suggestions based on transactions
+
+## API Documentation
+- [Postman Documentation](https://documenter.getpostman.com/view/36031029/2sAYBYfA3V)
