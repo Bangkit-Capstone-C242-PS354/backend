@@ -26,4 +26,13 @@ export class UpdateExpenseDto {
   @IsString()
   @IsOptional()
   receiptUrl?: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  tax?: number;
+
+  @IsString()
+  @IsOptional()
+  paymentMethod?: string;
 }

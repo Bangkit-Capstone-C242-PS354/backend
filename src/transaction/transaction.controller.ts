@@ -8,6 +8,7 @@ import {
   ValidationPipe,
   Post,
   Body,
+  Res,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { AuthGuard } from '../guard/auth.guard';
@@ -20,6 +21,7 @@ import { IncomeService } from '../income/income.service';
 import { CreateIncomeDto } from '../income/dto/create-income.dto';
 import { FilterIncomeDto } from '../income/dto/filter-income.dto';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
+import { Response } from 'express';
 
 @Controller('transactions')
 @UseGuards(AuthGuard)
@@ -50,6 +52,30 @@ export class TransactionController {
       message: 'Transactions retrieved successfully',
       data: await this.transactionService.getUserTransactions(req.user.uid),
     };
+  }
+
+  @Get('export')
+  async exportTransactions(
+    @Request() req,
+    @Query(ValidationPipe) filterDto: FilterTransactionDto,
+    @Res() res: Response,
+  ) {
+    const excelBuffer = await this.transactionService.exportTransactions(
+      req.user.uid,
+      filterDto.startDate,
+      filterDto.endDate,
+    );
+
+    // Force file download by setting binary type and attachment disposition
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': 'attachment; filename="transactions.xlsx"',
+      'Content-Length': excelBuffer.length,
+    });
+
+    // Write the buffer and end the response
+    res.write(excelBuffer, 'binary');
+    res.end();
   }
 }
 

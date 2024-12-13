@@ -46,7 +46,7 @@ export class ChatbotService {
             5. If you notice unusual spending patterns, mention them
             6. Always maintain a professional and supportive tone
 
-            Here are the user's recent transactions:
+            Here are the user's recent transactions (note that the unit of the transactions is in Rupiah):
             ${transactionContext}`,
           },
         ],
@@ -67,7 +67,7 @@ export class ChatbotService {
       .slice(0, 10) // Only use last 10 transactions for context
       .map(
         (t) =>
-          `${t.date}: ${t.type} - ${t.title} (${t.category}) - $${t.amount}`,
+          `${t.date}: ${t.type} - ${t.title} (${t.category}) - Rp ${t.amount}`,
       )
       .join('\n');
   }
